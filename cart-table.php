@@ -12,6 +12,8 @@
  */
 do_action( 'wc_cart_pdf_before_template' );
 
+global $woocommerce;
+
 $customer = new \WC_Customer( get_current_user_id() );
 
 $pre_order_details = unserialize( $_SESSION[ 'pre_order_details' ] );
@@ -36,8 +38,7 @@ $logo = ! $logo ? '' : $_SERVER['DOCUMENT_ROOT'] . $logo;
 			?>
 			<p>5720 South Arville - Suite #102, Las Vegas, NV 89119</p>
 			<p>Phone: 702-222-2103 - EMAIL: info@blueplanetlighting.com</p>	
-		</td>
-		<td></td>		
+		</td>		
 		<td style="text-align: center;">
 			<h2>Date: <?php echo esc_html( gmdate( get_option( 'date_format' ) ) ); ?></h2>
 			<h2>Quote#: <?php echo (string)$customer->get_id() . (string)rand(1000, 5000);?></h2>
@@ -70,6 +71,7 @@ $logo = ! $logo ? '' : $_SERVER['DOCUMENT_ROOT'] . $logo;
 		</td>
 		<td style="width: 50%; vertical-align: top;">
 			<p style="color: #29AAE1; font-weight: 700;">SHIP TO:</p>
+			<?php if( array_key_exists( "ship_to_different_address", $output ) ): ?>
 			<p>
 				<span><?php echo $pre_order_details['shipping_company_name'];?></span><br/>
 				<span><?php echo $pre_order_details['shipping_first_name'] . ' ' . $pre_order_details['shipping_last_name'];?></span><br/>
@@ -78,6 +80,16 @@ $logo = ! $logo ? '' : $_SERVER['DOCUMENT_ROOT'] . $logo;
 				<span><?php echo $pre_order_details['shipping_phone'];?></span><br/>
 				<span><?php echo $pre_order_details['shipping_email'];?></span><br/>
 			</p>
+			<?php else:?>
+			<p>
+				<span><?php echo $pre_order_details['billing_company_name'];?></span><br/>
+				<span><?php echo $pre_order_details['billing_first_name'] . ' ' . $pre_order_details['billing_last_name'];?></span><br/>
+				<span><?php echo $pre_order_details['billing_address_1'] . ', ' . $pre_order_details['billing_address_2'];?></span><br/>
+				<span><?php echo $pre_order_details['billing_city'] . ', ' . $pre_order_details['billing_state'] . ', ' . $pre_order_details['billing_postcode'];?></span><br/>
+				<span><?php echo $pre_order_details['billing_phone'];?></span><br/>
+				<span><?php echo $pre_order_details['billing_email'];?></span><br/>
+			</p>
+			<?php endif;?>
 		</td>
 	</tr>
 </table>
@@ -185,7 +197,7 @@ $logo = ! $logo ? '' : $_SERVER['DOCUMENT_ROOT'] . $logo;
 				<th class="row-coupon" colspan="4" style="text-align: right;"><?php wc_cart_totals_coupon_label( $coupon ); ?></th>
 				<td class="row-coupon" data-title="<?php echo esc_attr( wc_cart_totals_coupon_label( $coupon, false ) ); ?>"><?php wc_cart_totals_coupon_html( $coupon ); ?></td>
 			</tr>
-		<?php endforeach; ?>
+		<?php
 
 		<?php foreach ( WC()->cart->get_fees() as $fee ) : ?>
 			<tr class="fee cart-total-row">

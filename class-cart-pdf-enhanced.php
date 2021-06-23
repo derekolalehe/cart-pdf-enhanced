@@ -118,6 +118,15 @@ class CartPDFEnhanced {
 
         add_action( 'woocommerce_checkout_update_order_review', 'save_pre_order_details' );
 
+        function save_pre_order_fees(){
+           
+            $_SESSION['fees'] = serialize(WC()->cart->get_fees());
+           
+
+        }
+
+        add_action( 'woocommerce_cart_calculate_fees','save_pre_order_fees' );
+
     }
 
 
