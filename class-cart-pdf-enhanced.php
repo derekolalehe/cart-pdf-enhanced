@@ -24,7 +24,7 @@ if (!session_id()) {
 
 class CartPDFEnhanced {
 
-    protected static $version = '1.0.0';
+    protected static $version = '1.2.0';
 
     protected static $plugin_slug = 'cart-pdf-enhanced';
 
@@ -67,6 +67,10 @@ class CartPDFEnhanced {
             <a href="<?php echo esc_url( wp_nonce_url( add_query_arg( array( 'cart-pdf' => '1' ), wc_get_cart_url() ), 'cart-pdf' ) ); ?>"
             style="margin: 25px 0; background-color: #f2f2f2;" class="cart-pdf-button button" target="_blank">
                 <?php esc_html_e( get_option( 'wc_cart_pdf_button_label', __( 'Download Order as PDF', 'wc-cart-pdf' ) ) ); ?>
+            </a>
+            <a href="" id="create-a-quote"
+            style="margin: 25px 0; background-color: #f2f2f2;" class="cart-pdf-button button creating-quote" target="_blank">
+                Create a Quote
             </a>
         
             <?php
@@ -131,6 +135,19 @@ class CartPDFEnhanced {
         }
 
         add_action( 'woocommerce_review_order_before_order_total','save_pre_order_fees' );
+
+        function add_download_quote_button(){
+
+            ?>
+            <a href="<?php echo esc_url( wp_nonce_url( add_query_arg( array( 'cart-pdf' => '1' ), wc_get_cart_url() ), 'cart-pdf' ) ); ?>/"
+            style="margin: 25px 0; background-color: #f2f2f2;" class="cart-pdf-button button" target="_blank">
+                <?php esc_html_e( get_option( 'wc_cart_pdf_button_label', __( 'Download Quote as PDF', 'wc-cart-pdf' ) ) ); ?>
+            </a>
+            <?php
+
+        }
+
+        add_action( 'woocommerce_review_order_after_order_total', 'add_download_quote_button' );
 
         require_once( 'ajax-methods.php' );
 
