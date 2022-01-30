@@ -1,0 +1,19 @@
+.wcf-embed-checkout-form div.woocommerce table.shop_table thead tr th:nth-child(1),
+.wcf-embed-checkout-form div.woocommerce table.shop_table tbody tr td:nth-child(1) {
+    width: 60%;
+}
+
+.wcf-embed-checkout-form div.woocommerce table.shop_table thead tr th:nth-child(2),
+.wcf-embed-checkout-form div.woocommerce table.shop_table tbody tr td:nth-child(2) {
+    width: 20%;
+}
+
+.wcf-embed-checkout-form div.woocommerce table.shop_table thead tr th:nth-child(3),
+.wcf-embed-checkout-form div.woocommerce table.shop_table tbody tr td:nth-child(3) {
+    width: 20%;
+}
+
+input.quote-val.quote-subtotal,
+input.quote-val.quote-total {
+    background-color: #e2e2e2;
+}

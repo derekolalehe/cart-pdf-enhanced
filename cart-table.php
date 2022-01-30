@@ -20,38 +20,125 @@ $pre_order_details = unserialize( $_SESSION[ 'pre_order_details' ] );
 
 $logo = parse_url( get_option( 'wc_cart_pdf_logo', get_option( 'woocommerce_email_header_image' ) ), PHP_URL_PATH );
 $logo = ! $logo ? '' : $_SERVER['DOCUMENT_ROOT'] . $logo;
+$is_quote =  $_GET[ 'is-quote' ];
+if( $is_quote == '1' ){
+
+	$str = stripslashes( $_SESSION[ 'quote_details' ] );
+	$str = str_replace( '\\"', '', $str );
+	$quote_details = json_decode( $str );
+	
+}
 
 ?>
-<table id="cart-header">
+<table id="cart-header" style="width: 100%;">
 	<tr>
 		<td style="text-align: center;">
 			<?php
-			if ( file_exists( $logo ) ) {
-				printf(
-					'<div id="template_header_image"><p style="margin-top: 0; text-align: %s;"><img src="%s" style="width: %s;" alt="%s" /></p></div>',
-					get_option( 'wc_cart_pdf_logo_alignment', 'center' ),
-					esc_url( $logo ),
-					get_option( 'wc_cart_pdf_logo_width' ) ? esc_attr( get_option( 'wc_cart_pdf_logo_width' ) ) . 'px' : 'auto',
-					esc_attr( get_bloginfo( 'name', 'display' ) )
-				);
+			if( $is_quote == '1' ){
+				// printf(
+				// 	'<div id="template_header_image"><p style="margin-top: 0; text-align: %s;"><img src="%s" style="max-height: %s;" alt="%s" /></p></div>',
+				// 	get_option( 'wc_cart_pdf_logo_alignment', 'center' ),
+				// 	esc_url( $avatar_url ),
+				// 	'100px',
+				// 	esc_attr( get_bloginfo( 'name', 'display' ) )
+				// );
+				echo get_avatar( get_current_user_id() );
+			}
+			else{
+				if ( file_exists( $logo ) ) {
+					printf(
+						'<div id="template_header_image"><p style="margin-top: 0; text-align: %s;"><img src="%s" style="width: %s;" alt="%s" /></p></div>',
+						get_option( 'wc_cart_pdf_logo_alignment', 'center' ),
+						esc_url( $logo ),
+						get_option( 'wc_cart_pdf_logo_width' ) ? esc_attr( get_option( 'wc_cart_pdf_logo_width' ) ) . 'px' : 'auto',
+						esc_attr( get_bloginfo( 'name', 'display' ) )
+					);
+				}
 			}
 			?>
-			<p>5720 South Arville - Suite #102, Las Vegas, NV 89119</p>
-			<p>Phone: 702-222-2103 - EMAIL: info@blueplanetlighting.com</p>	
+			<p>
+				<?php 
+					if( $is_quote == '1' ){
+						echo 	$customer->get_billing_company() . ' ' . 
+								$customer->get_billing_address_1() . ' ' . 
+								$customer->get_billing_address_2() . ' ';
+					}
+					else {
+						echo '5720 South Arville - Suite #102, Las Vegas, NV 89119';
+					}
+				?>				
+			</p>
+			<p>
+				<?php 
+					if( $is_quote == '1' ){
+						echo 	$customer->get_billing_city() . ' ' . 
+								$customer->get_billing_state() . ' ' . 
+								$customer->get_billing_postcode() . ' ' .
+								$customer->get_billing_country() . ' ' ;
+					}
+				?>				
+			</p>
+			<p>
+				<?php 
+					if( $is_quote != '1' ){
+						echo 'Phone: 702-222-2103 - EMAIL: info@blueplanetlighting.com';
+					}
+				?>				
+			</p>	
 		</td>		
 		<td style="text-align: center;">
 			<h2>Date: <?php echo esc_html( gmdate( get_option( 'date_format' ) ) ); ?></h2>
-			<h2>Quote#: <?php echo (string)$customer->get_id() . (string)rand(1000, 5000);?></h2>
+			<h2>Quote#: 
+				<?php 
+					if( $is_quote == '1' ){
+						echo (string)rand(100000, 500000);
+					}
+					else {
+						echo (string)$customer->get_id() . (string)rand(1000, 5000);
+					}
+				?>
+			</h2>
 			<p>Sales Rep:</p>
 			<p>
 				<?php 
 					$csr_id = get_user_meta( $customer->get_id(), '_customer_csr', true ) ;
 					$csr_name = get_the_title( $csr_id );					
 				?>
-				<strong><?php echo $csr_name;?></strong>
+				<strong>
+					<?php 
+					if( $is_quote == '1' ){
+						echo $customer->first_name . ' ' . $customer->last_name;
+					}
+					else {
+						echo $csr_name;
+					}
+					?>
+				</strong>
 			</p>
-			<p>702-222-2103</p>
-			<p><srong><?php echo get_post_meta( $csr_id, 'woo_csr_sales_rep_email', true )?></srong></p>
+			<p>
+				<?php 
+				
+				if( $is_quote == '1' ){
+					echo get_user_meta( $customer->get_id(), 'user_registration_phone_number', true );
+				}
+				else {
+					echo '702-222-2103';
+				}
+				
+				?>				
+			</p>
+			<p>
+				<srong>
+					<?php 
+					if( $is_quote == '1' ){
+						echo $customer->email;
+					}
+					else{
+						echo get_post_meta( $csr_id, 'woo_csr_sales_rep_email', true );		
+					}					
+					?>
+				</srong>
+			</p>
 		</td>
 	</tr>
 </table>
@@ -113,7 +200,11 @@ $full_total = $_SESSION['cart_pdf_full_total'];
 	</thead>
 	<tbody>
 		<?php
+
+		$quote_line_count = 0;
+
 		foreach ( WC()->cart->get_cart() as $cart_item_key => $cart_item ) {
+
 			$_product   = apply_filters( 'woocommerce_cart_item_product', $cart_item['data'], $cart_item, $cart_item_key );
 			$product_id = apply_filters( 'woocommerce_cart_item_product_id', $cart_item['product_id'], $cart_item, $cart_item_key );
 
@@ -167,7 +258,15 @@ $full_total = $_SESSION['cart_pdf_full_total'];
 
 					<td class="product-price" data-title="<?php esc_attr_e( 'Price', 'woocommerce' ); ?>">
 						<?php
+						if( $is_quote == '1' ){
+							$qty = (int)$cart_item['quantity'];
+							$price = (float)( str_replace( '$', '', $quote_details->lines[ $quote_line_count ] ) );
+							$unit_price = '$' . (string)number_format( ( $price / $qty ), 2, '.', ',' );
+							echo $unit_price;
+						}
+						else {
 							echo apply_filters( 'woocommerce_cart_item_price', WC()->cart->get_product_price( $_product ), $cart_item, $cart_item_key ); // PHPCS: XSS ok.
+						}
 						?>
 					</td>
 
@@ -177,7 +276,16 @@ $full_total = $_SESSION['cart_pdf_full_total'];
 
 					<td class="product-subtotal" data-title="<?php esc_attr_e( 'Total', 'woocommerce' ); ?>">
 						<?php
-							echo apply_filters( 'woocommerce_cart_item_subtotal', WC()->cart->get_product_subtotal( $_product, $cart_item['quantity'] ), $cart_item, $cart_item_key ); // PHPCS: XSS ok.
+							if( $is_quote == '1' ){
+
+								echo apply_filters( 'woocommerce_cart_item_subtotal', $quote_details->lines[ $quote_line_count ], $cart_item, $cart_item_key );
+
+								$quote_line_count++;
+
+							}
+							else{
+								echo apply_filters( 'woocommerce_cart_item_subtotal', WC()->cart->get_product_subtotal( $_product, $cart_item['quantity'] ), $cart_item, $cart_item_key ); // PHPCS: XSS ok.
+							}
 						?>
 					</td>
 				</tr>
@@ -188,7 +296,16 @@ $full_total = $_SESSION['cart_pdf_full_total'];
 
 		<tr class="cart-subtotal cart-total-row">
 			<th class="row-subtotal" colspan="4" style="text-align: right;"><?php esc_html_e( 'Subtotal', 'woocommerce' ); ?></th>
-			<td class="row-subtotal" data-title="<?php esc_attr_e( 'Subtotal', 'woocommerce' ); ?>"><?php wc_cart_totals_subtotal_html(); ?></td>
+			<td class="row-subtotal" data-title="<?php esc_attr_e( 'Subtotal', 'woocommerce' ); ?>">
+				<?php 
+				if( $is_quote == '1' ){
+					echo $quote_details->subtotal;
+				}
+				else{
+					wc_cart_totals_subtotal_html(); 
+				}
+				?>
+			</td>
 		</tr>
 		
 		<?php if ( 0 < WC()->cart->get_shipping_total() ) :?>
@@ -239,12 +356,22 @@ $full_total = $_SESSION['cart_pdf_full_total'];
 
 		<tr class="order-total cart-total-row">
 			<th class="row-subtotal" colspan="4" style="text-align: right;"><?php esc_html_e( 'Total', 'woocommerce' ); ?></th>
-			<td class="row-subtotal" data-title="<?php esc_attr_e( 'Total', 'woocommerce' ); ?>"><?php echo '$' . $full_total;?></td>
+			<td class="row-subtotal" data-title="<?php esc_attr_e( 'Total', 'woocommerce' ); ?>">
+				<?php 
+				if( $is_quote == '1' ){
+					echo $quote_details->total;
+				}
+				else{
+					echo '$' . $full_total;
+				}
+				?>
+			</td>
 		</tr>
 
 		<?php do_action( 'woocommerce_cart_totals_after_order_total' ); ?>
 	</tbody>
 </table>
+<?php if( $is_quote != '1' ){?>
 <div id="template_pre_footer" style="margin: 50px auto; text-align: center; padding: 20px; background-color: #f2f2f2l">
 	<p>
 		<span style="color: #29AAE1; font-weight: 700;">Payment Options and Fees</span><br/><br/>
@@ -254,6 +381,7 @@ $full_total = $_SESSION['cart_pdf_full_total'];
 		<span>Checkout - No Charge, Order Ships When Check Clears</span><br/>
 	</p>		
 </div>
+<?php } ?>
 
 <?php
 /**

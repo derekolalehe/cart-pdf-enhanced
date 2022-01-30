@@ -24,7 +24,7 @@ if (!session_id()) {
 
 class CartPDFEnhanced {
 
-    protected static $version = '1.0.0';
+    protected static $version = '1.2.0';
 
     protected static $plugin_slug = 'cart-pdf-enhanced';
 
@@ -45,20 +45,36 @@ class CartPDFEnhanced {
                 'home_url' => home_url(),
                 'theme_url' => get_template_directory_uri(),
                 'plugins_url' => plugins_url(),
+                'pdf_url' => esc_url( wp_nonce_url( add_query_arg( array( 'cart-pdf' => '1', 'is-quote' => '1' ), wc_get_cart_url() ), 'cart-pdf' ) ),
 
             );            
 
             if( is_cart() || is_checkout() ){
 
-                wp_enqueue_script( 'cart-pdf-enhanced', plugins_url( 'cart-pdf-enhanced.js?v=' . (string)microtime(), __FILE__ ), array(), '1.0.0', true);
+                wp_enqueue_script( 'cart-pdf-enhanced', plugins_url( 'cart-pdf-enhanced.js?v=' . (string)microtime(), __FILE__ ), array(), '1.0.0', true );
 
                 wp_localize_script( 'cart-pdf-enhanced', 'cart_pdf_urls', $params ); 
 
-            }       
+            } 
+            
+            if( is_checkout() ){
+
+                wp_enqueue_script( 'create-a-quote', plugins_url( 'create-a-quote.js?v=' . (string)microtime(), __FILE__ ), array(), '1.0.0', true );
+
+                wp_localize_script( 'create-a-quote', 'cart_pdf_urls', $params ); 
+
+                wp_enqueue_style( 'style', plugins_url( 'style.css?v=' . (string)microtime(), __FILE__ ), false, false );
+
+            }
 
         }
 
         add_action( 'wp_enqueue_scripts', 'cart_pdf_enhanced_scripts_styles' );  
+
+        function cpe_add_woocommerce_support() {
+            add_theme_support( 'woocommerce' );
+        }
+        add_action( 'after_setup_theme', 'cpe_add_woocommerce_support' );
 
         function add_cart_pdf_button() {	
             if( current_user_can( 'manage_options' ) ){
@@ -67,6 +83,14 @@ class CartPDFEnhanced {
             <a href="<?php echo esc_url( wp_nonce_url( add_query_arg( array( 'cart-pdf' => '1' ), wc_get_cart_url() ), 'cart-pdf' ) ); ?>"
             style="margin: 25px 0; background-color: #f2f2f2;" class="cart-pdf-button button" target="_blank">
                 <?php esc_html_e( get_option( 'wc_cart_pdf_button_label', __( 'Download Order as PDF', 'wc-cart-pdf' ) ) ); ?>
+            </a><br/>
+            <a href="#"
+            id="download-quote" style="margin: 25px 20px 25px 0; background-color: #f2f2f2; display: none;" class="cart-pdf-button button" target="_blank">
+                <?php esc_html_e( get_option( 'wc_cart_pdf_button_label', __( 'Download Quote as PDF', 'wc-cart-pdf' ) ) ); ?>
+            </a>
+            <a href="#" id="create-a-quote"
+            style="margin: 25px 0; background-color: #f2f2f2;" class="cart-pdf-button button creating-quote">
+                <?php esc_html_e( get_option( 'wc_cart_pdf_button_label', __( 'Create a Quote', 'wc-cart-pdf' ) ) ); ?>
             </a>
         
             <?php
@@ -126,16 +150,21 @@ class CartPDFEnhanced {
            
             $_SESSION['cart_pdf_fees'] = serialize( WC()->cart->get_fees() );
 
-            $_SESSION['cart_pdf_full_total'] = WC()->cart->total;           
+            $_SESSION['cart_pdf_full_total'] = WC()->cart->total;      
+            
+            //Save sessions for quote values too
 
         }
 
         add_action( 'woocommerce_review_order_before_order_total','save_pre_order_fees' );
 
         require_once( 'ajax-methods.php' );
-
+        
         add_action('wp_ajax_store_shipping_label', 'store_shipping_label');
         add_action('wp_ajax_nopriv_store_shipping_label', 'store_shipping_label');
+
+        add_action('wp_ajax_save_quote_details', 'save_quote_details');
+        add_action('wp_ajax_nopriv_save_quote_details', 'save_quote_details');
 
     }
 
